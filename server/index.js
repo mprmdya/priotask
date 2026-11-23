@@ -6,7 +6,7 @@ const { initScheduler } = require('./services/scheduler');
 const PORT = process.env.PORT || 5000;
 
 // Serve frontend build in production / non-Vercel environment
-const clientDistPath = path.join(__dirname, '../client/dist');
+const clientDistPath = path.join(__dirname, '../dist');
 app.use(express.static(clientDistPath));
 
 app.use((req, res, next) => {
