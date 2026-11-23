@@ -2,71 +2,80 @@
   "tasks": [
     {
       "id": "task-1",
-      "title": "Selesaikan Laporan Proyek Akhir",
-      "description": "Menyusun bab 4 & bab 5 serta lampiran data analitik untuk diserahkan ke dosen/klien.",
-      "category": "Akademik / Kerja",
+      "title": "Project IoT KineStep",
+      "description": "Menyusun Alat, Website",
+      "category": "Kerja",
       "urgency": 5,
       "importance": 5,
       "status": "in_progress",
-      "dueDate": "2026-11-24T06:37:00.322Z",
+      "dueDate": "2026-11-30T03:00:00.000Z",
       "waReminderEnabled": true,
       "lastNotifiedAt": null,
       "createdAt": "2026-11-23T12:37:00.324Z",
-      "updatedAt": "2026-11-23T12:37:00.324Z"
+      "updatedAt": "2026-11-23T13:10:50.192Z"
     },
     {
       "id": "task-2",
-      "title": "Riset Arsitektur Sistem Baru & Belajar Cloud Deployment",
-      "description": "Eksplorasi strategi deployment microservices dan CI/CD pipeline.",
-      "category": "Pengembangan Diri",
-      "urgency": 2,
+      "title": "PJBL Prodi",
+      "description": "Membuat Alat Untuk Smart Akuarium",
+      "category": "Akademik",
+      "urgency": 3,
       "importance": 5,
       "status": "todo",
-      "dueDate": "2026-11-28T12:37:00.324Z",
+      "dueDate": "2026-11-27T05:00:00.000Z",
       "waReminderEnabled": true,
       "lastNotifiedAt": null,
       "createdAt": "2026-11-23T12:37:00.324Z",
-      "updatedAt": "2026-11-23T12:37:00.324Z"
+      "updatedAt": "2026-11-23T13:12:15.569Z"
     },
     {
       "id": "task-3",
-      "title": "Balas Email & Konfirmasi Kehadiran Rapat Non-Urgent",
-      "description": "Menjawab pesan dari partner yang meminta update jadwal minggu depan.",
-      "category": "Administrasi",
-      "urgency": 4,
-      "importance": 2,
-      "status": "todo",
-      "dueDate": "2026-11-24T12:37:00.324Z",
-      "waReminderEnabled": false,
+      "title": "Lomba Polines",
+      "description": "Membahas Project apa yang di kerjakan",
+      "category": "Lomba",
+      "urgency": 3,
+      "importance": 3,
+      "status": "in_progress",
+      "dueDate": "2026-11-26T15:40:00.000Z",
+      "waReminderEnabled": true,
       "lastNotifiedAt": null,
       "createdAt": "2026-11-23T12:37:00.324Z",
-      "updatedAt": "2026-11-23T12:37:00.324Z"
+      "updatedAt": "2026-11-23T13:13:40.226Z"
     },
     {
       "id": "task-4",
-      "title": "Scroll Media Sosial & Browsing Tanpa Arah",
-      "description": "Aktivitas distraksi yang sering membuang waktu produktif kerja.",
-      "category": "Distraksi",
-      "urgency": 1,
-      "importance": 1,
-      "status": "todo",
-      "dueDate": null,
-      "waReminderEnabled": false,
+      "title": "Pendaftaran Lomba BTN",
+      "description": "Daftar lomba",
+      "category": "Kelompok",
+      "urgency": 4,
+      "importance": 5,
+      "status": "in_progress",
+      "dueDate": "2026-11-29T16:59:00.000Z",
+      "waReminderEnabled": true,
       "lastNotifiedAt": null,
       "createdAt": "2026-11-23T12:37:00.324Z",
-      "updatedAt": "2026-11-23T12:37:00.324Z"
+      "updatedAt": "2026-11-23T13:14:59.592Z"
     }
   ],
   "settings": {
     "whatsapp": {
-      "provider": "callmebot",
-      "phoneNumber": "",
-      "apiKey": "",
+      "provider": "fonnte",
+      "phoneNumber": "087738844412",
+      "apiKey": "Ng1A6Vi4wuLhXHQGwM6Q",
       "enabled": false,
       "dailyDigestEnabled": true,
       "dailyDigestTime": "07:30",
-      "deadlineReminderHoursBefore": 3
+      "deadlineReminderHoursBefore": 24
     },
     "notificationHistory": []
-  }
+  },
+  "notificationHistory": [
+    {
+      "target": "6287738844412",
+      "provider": "fonnte",
+      "message": "🤖 *[PRIORITASK - TES NOTIFIKASI]*\n\nHalo! Jika kamu membaca pesan ini, berarti konfigurasi pengingat WhatsApp di sistem *Prioritas Tugas* sudah BERHASIL terhubung dengan sempurna! 🚀\n\n⏰ Waktu Tes: 23/11/2026, 20.08.19 WIB\n\n_Kamu akan menerima pengingat otomatis untuk tugas-tugas prioritasmu!_ ✨",
+      "status": "success",
+      "timestamp": "2026-11-23T13:08:20.028Z"
+    }
+  ]
 }
