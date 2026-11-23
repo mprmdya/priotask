@@ -12,17 +12,21 @@ import {
   updateTask, 
   deleteTask, 
   fetchSettings, 
+  syncDataToServer,
   sendDailyDigestNow, 
   sendTaskNotificationNow 
 } from './api/client';
-import { CheckCircle, AlertCircle, RefreshCw, MessageSquare } from 'lucide-react';
+import { CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
+
+const STORAGE_TASKS_KEY = 'priotask_local_tasks_v1';
+const STORAGE_SETTINGS_KEY = 'priotask_local_settings_v1';
 
 export default function App() {
   const [tasks, setTasks] = useState([]);
   const [summary, setSummary] = useState(null);
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [currentView, setCurrentView] = useState('matrix'); // 'matrix' | 'kanban' | 'list'
+  const [currentView, setCurrentView] = useState('matrix');
 
   // Modal states
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -42,20 +46,73 @@ export default function App() {
     setTimeout(() => setToast(null), 4500);
   };
 
-  // Load initial data
+  // Helper untuk hitung summary dari tasks
+  const computeSummary = (taskList) => {
+    return {
+      total: taskList.length,
+      q1Count: taskList.filter(t => t.quadrant === 'Q1' && t.status !== 'done').length,
+      q2Count: taskList.filter(t => t.quadrant === 'Q2' && t.status !== 'done').length,
+      q3Count: taskList.filter(t => t.quadrant === 'Q3' && t.status !== 'done').length,
+      q4Count: taskList.filter(t => t.quadrant === 'Q4' && t.status !== 'done').length,
+      completedCount: taskList.filter(t => t.status === 'done').length,
+      overdueCount: taskList.filter(t => t.deadlineStatus === 'overdue').length
+    };
+  };
+
+  // Load initial data (LocalStorage First -> Server Sync)
   const loadData = async () => {
     try {
-      setLoading(true);
+      // 1. Baca dari localStorage terlebih dahulu (agar tidak ada data yang hilang saat refresh)
+      const localTasksRaw = localStorage.getItem(STORAGE_TASKS_KEY);
+      const localSettingsRaw = localStorage.getItem(STORAGE_SETTINGS_KEY);
+      let localTasks = null;
+      let localSettings = null;
+
+      if (localTasksRaw) {
+        try {
+          localTasks = JSON.parse(localTasksRaw);
+          if (Array.isArray(localTasks) && localTasks.length > 0) {
+            setTasks(localTasks);
+            setSummary(computeSummary(localTasks));
+            setLoading(false); // Langsung render agar instan!
+          }
+        } catch (e) {}
+      }
+
+      if (localSettingsRaw) {
+        try {
+          localSettings = JSON.parse(localSettingsRaw);
+          setSettings(localSettings);
+        } catch (e) {}
+      }
+
+      // 2. Ambil dari server API
       const [tasksRes, settingsRes] = await Promise.all([
-        fetchTasks(),
-        fetchSettings()
+        fetchTasks().catch(() => null),
+        fetchSettings().catch(() => null)
       ]);
-      setTasks(tasksRes.tasks || []);
-      setSummary(tasksRes.summary || null);
-      setSettings(settingsRes.settings || null);
+
+      const serverTasks = tasksRes?.tasks || [];
+      const serverSettings = settingsRes?.settings || null;
+
+      // Jika ada data lokal, sinkronkan ke serverless backend agar cron WA tetap punya data terbaru
+      if (localTasks && localTasks.length > 0) {
+        await syncDataToServer({
+          tasks: localTasks,
+          settings: localSettings || serverSettings
+        }).catch(() => {});
+      } else if (serverTasks.length > 0) {
+        setTasks(serverTasks);
+        setSummary(tasksRes.summary);
+        localStorage.setItem(STORAGE_TASKS_KEY, JSON.stringify(serverTasks));
+      }
+
+      if (serverSettings && !localSettings) {
+        setSettings(serverSettings);
+        localStorage.setItem(STORAGE_SETTINGS_KEY, JSON.stringify(serverSettings));
+      }
     } catch (err) {
       console.error('Error memuat data:', err);
-      showToast('Gagal memuat data dari server.', 'error');
     } finally {
       setLoading(false);
     }
@@ -65,17 +122,32 @@ export default function App() {
     loadData();
   }, []);
 
-  // Handlers
+  // Handlers dengan persistensi ganda (LocalStorage + Server)
   const handleSaveTask = async (taskData) => {
     try {
+      let savedTask = null;
       if (taskData.id) {
-        await updateTask(taskData.id, taskData);
+        const res = await updateTask(taskData.id, taskData);
+        savedTask = res.task;
         showToast('Tugas berhasil diperbarui!');
       } else {
-        await createTask(taskData);
+        const res = await createTask(taskData);
+        savedTask = res.task;
         showToast('Tugas baru berhasil ditambahkan!');
       }
-      await loadData();
+
+      // Update state & LocalStorage seketika
+      setTasks(prevTasks => {
+        let next;
+        if (taskData.id) {
+          next = prevTasks.map(t => t.id === taskData.id ? { ...t, ...savedTask } : t);
+        } else {
+          next = [savedTask, ...prevTasks];
+        }
+        localStorage.setItem(STORAGE_TASKS_KEY, JSON.stringify(next));
+        setSummary(computeSummary(next));
+        return next;
+      });
     } catch (err) {
       showToast(err.message, 'error');
     }
@@ -85,8 +157,13 @@ export default function App() {
     if (!window.confirm('Yakin ingin menghapus kegiatan ini?')) return;
     try {
       await deleteTask(id);
+      setTasks(prevTasks => {
+        const next = prevTasks.filter(t => t.id !== id);
+        localStorage.setItem(STORAGE_TASKS_KEY, JSON.stringify(next));
+        setSummary(computeSummary(next));
+        return next;
+      });
       showToast('Tugas berhasil dihapus.');
-      await loadData();
     } catch (err) {
       showToast(err.message, 'error');
     }
@@ -94,8 +171,13 @@ export default function App() {
 
   const handleToggleStatus = async (id, nextStatus) => {
     try {
-      await updateTask(id, { status: nextStatus });
-      await loadData();
+      const res = await updateTask(id, { status: nextStatus });
+      setTasks(prevTasks => {
+        const next = prevTasks.map(t => t.id === id ? { ...t, ...res.task, status: nextStatus } : t);
+        localStorage.setItem(STORAGE_TASKS_KEY, JSON.stringify(next));
+        setSummary(computeSummary(next));
+        return next;
+      });
     } catch (err) {
       showToast(err.message, 'error');
     }
@@ -104,7 +186,7 @@ export default function App() {
   const handleSendDigest = async () => {
     setIsSendingDigest(true);
     try {
-      const res = await sendDailyDigestNow();
+      await sendDailyDigestNow();
       showToast('Ringkasan tugas harian berhasil dikirim ke WhatsApp!');
     } catch (err) {
       showToast(err.message, 'error');
@@ -116,9 +198,8 @@ export default function App() {
   const handleSendTaskWA = async (taskId) => {
     setSendingWAId(taskId);
     try {
-      const res = await sendTaskNotificationNow(taskId);
+      await sendTaskNotificationNow(taskId);
       showToast('Detail pengingat tugas berhasil dikirim ke WhatsApp!');
-      await loadData();
     } catch (err) {
       showToast(err.message, 'error');
     } finally {
@@ -252,7 +333,10 @@ export default function App() {
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
         settings={settings}
-        onSettingsUpdated={(newSettings) => setSettings(newSettings)}
+        onSettingsUpdated={(newSettings) => {
+          setSettings(newSettings);
+          localStorage.setItem(STORAGE_SETTINGS_KEY, JSON.stringify(newSettings));
+        }}
       />
 
     </div>

@@ -5,9 +5,8 @@ const { MongoClient } = require('mongodb');
 
 const isVercel = Boolean(process.env.VERCEL);
 const DATA_DIR = isVercel ? os.tmpdir() : path.join(__dirname, 'data');
-const DB_FILE = path.join(DATA_DIR, 'store.json');
+const DB_FILE = path.join(DATA_DIR, 'priotask_store.json');
 
-// Pastikan direktori data ada (jika bukan Vercel)
 try {
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -95,19 +94,21 @@ async function getMongoCollection() {
   if (!uri) return null;
   try {
     if (!mongoClient) {
-      mongoClient = new MongoClient(uri);
+      mongoClient = new MongoClient(uri, {
+        serverSelectionTimeoutMS: 5000,
+        connectTimeoutMS: 5000
+      });
       await mongoClient.connect();
     }
     const db = mongoClient.db('priotask');
     return db.collection('app_state');
   } catch (err) {
-    console.error('Koneksi MongoDB gagal, fallback ke penyimpanan lokal:', err.message);
+    console.error('Koneksi MongoDB Atlas gagal:', err.message);
     return null;
   }
 }
 
-// Sinkronisasi inisial
-function readDbSync() {
+function readDb() {
   if (memoryStore) return memoryStore;
   try {
     if (fs.existsSync(DB_FILE)) {
@@ -121,35 +122,32 @@ function readDbSync() {
       return memoryStore;
     }
   } catch (err) {}
-  
+
   memoryStore = JSON.parse(JSON.stringify(defaultData));
-  try {
-    fs.writeFileSync(DB_FILE, JSON.stringify(memoryStore, null, 2), 'utf-8');
-  } catch (e) {}
   return memoryStore;
 }
 
-function writeDbSync(data) {
+async function writeDb(data) {
   memoryStore = data;
   try {
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
   } catch (err) {}
-  
-  // Jika MongoDB URI ada, sinkronkan di background
+
   if (process.env.MONGODB_URI) {
-    getMongoCollection()
-      .then(col => {
-        if (col) {
-          col.updateOne({ _id: 'main_state' }, { $set: data }, { upsert: true }).catch(() => {});
-        }
-      })
-      .catch(() => {});
+    try {
+      const col = await getMongoCollection();
+      if (col) {
+        await col.updateOne({ _id: 'main_state' }, { $set: data }, { upsert: true });
+      }
+    } catch (e) {
+      console.error('Gagal menulis ke MongoDB:', e.message);
+    }
   }
   return true;
 }
 
 async function loadFromMongoIfAvailable() {
-  if (!process.env.MONGODB_URI) return readDbSync();
+  if (!process.env.MONGODB_URI) return readDb();
   try {
     const col = await getMongoCollection();
     if (col) {
@@ -160,15 +158,18 @@ async function loadFromMongoIfAvailable() {
           settings: { ...defaultData.settings, ...(doc.settings || {}) },
           notificationHistory: doc.notificationHistory || []
         };
+        try {
+          fs.writeFileSync(DB_FILE, JSON.stringify(memoryStore, null, 2), 'utf-8');
+        } catch (e) {}
         return memoryStore;
       }
     }
   } catch (e) {}
-  return readDbSync();
+  return readDb();
 }
 
 module.exports = {
-  readDb: readDbSync,
-  writeDb: writeDbSync,
+  readDb,
+  writeDb,
   loadFromMongoIfAvailable
 };

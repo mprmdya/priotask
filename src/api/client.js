@@ -40,6 +40,16 @@ export async function deleteTask(id) {
   return res.json();
 }
 
+export async function syncDataToServer(payload) {
+  const res = await fetch(`${API_BASE}/sync`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error('Gagal menyinkronkan data');
+  return res.json();
+}
+
 export async function fetchSettings() {
   const res = await fetch(`${API_BASE}/settings`);
   if (!res.ok) throw new Error('Gagal memuat pengaturan');

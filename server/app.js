@@ -110,7 +110,7 @@ app.get('/api/tasks', (req, res) => {
 });
 
 // 3. Create task
-app.post('/api/tasks', (req, res) => {
+app.post('/api/tasks', async (req, res) => {
   const { title, description, category, urgency, importance, dueDate, waReminderEnabled, status } = req.body;
 
   if (!title || !title.trim()) {
@@ -134,14 +134,14 @@ app.post('/api/tasks', (req, res) => {
   };
 
   db.tasks.unshift(newTask);
-  writeDb(db);
+  await writeDb(db);
 
   const computed = computeTaskPriority(newTask);
   res.status(201).json({ task: computed, message: 'Tugas berhasil ditambahkan!' });
 });
 
 // 4. Update task
-app.put('/api/tasks/:id', (req, res) => {
+app.put('/api/tasks/:id', async (req, res) => {
   const db = readDb();
   const index = db.tasks.findIndex(t => t.id === req.params.id);
 
@@ -157,13 +157,13 @@ app.put('/api/tasks/:id', (req, res) => {
   };
 
   db.tasks[index] = updated;
-  writeDb(db);
+  await writeDb(db);
 
   res.json({ task: computeTaskPriority(updated), message: 'Tugas berhasil diperbarui!' });
 });
 
 // 5. Delete task
-app.delete('/api/tasks/:id', (req, res) => {
+app.delete('/api/tasks/:id', async (req, res) => {
   const db = readDb();
   const index = db.tasks.findIndex(t => t.id === req.params.id);
 
@@ -172,19 +172,33 @@ app.delete('/api/tasks/:id', (req, res) => {
   }
 
   const deleted = db.tasks.splice(index, 1)[0];
-  writeDb(db);
+  await writeDb(db);
 
   res.json({ success: true, deleted, message: 'Tugas berhasil dihapus.' });
 });
 
-// 6. Get settings
+// 6. Client sync endpoint (menyimpan data dari client browser ke serverless container)
+app.post('/api/sync', async (req, res) => {
+  const { tasks, settings } = req.body;
+  const db = readDb();
+  if (Array.isArray(tasks) && tasks.length > 0) {
+    db.tasks = tasks;
+  }
+  if (settings) {
+    db.settings = { ...db.settings, ...settings };
+  }
+  await writeDb(db);
+  res.json({ success: true, message: 'Data berhasil disinkronkan ke server.' });
+});
+
+// 7. Get settings
 app.get('/api/settings', (req, res) => {
   const db = readDb();
   res.json({ settings: db.settings });
 });
 
-// 7. Update settings
-app.post('/api/settings', (req, res) => {
+// 8. Update settings
+app.post('/api/settings', async (req, res) => {
   const db = readDb();
   db.settings = {
     ...db.settings,
@@ -193,12 +207,12 @@ app.post('/api/settings', (req, res) => {
       ...(req.body.whatsapp || {})
     }
   };
-  writeDb(db);
+  await writeDb(db);
 
   res.json({ settings: db.settings, message: 'Pengaturan WhatsApp berhasil disimpan!' });
 });
 
-// 8. Test kirim WhatsApp
+// 9. Test kirim WhatsApp
 app.post('/api/notifications/test', async (req, res) => {
   const { provider, phoneNumber, apiKey } = req.body;
 
@@ -224,7 +238,7 @@ app.post('/api/notifications/test', async (req, res) => {
   }
 });
 
-// 9. Manual trigger send Daily Digest
+// 10. Manual trigger send Daily Digest
 app.post('/api/notifications/send-digest', async (req, res) => {
   try {
     const result = await sendDailyDigest(true);
@@ -237,7 +251,7 @@ app.post('/api/notifications/send-digest', async (req, res) => {
   }
 });
 
-// 10. Manual send notification for a single task
+// 11. Manual send notification for a single task
 app.post('/api/tasks/:id/notify', async (req, res) => {
   const db = readDb();
   const task = db.tasks.find(t => t.id === req.params.id);
@@ -261,7 +275,7 @@ app.post('/api/tasks/:id/notify', async (req, res) => {
     });
 
     task.lastNotifiedAt = new Date().toISOString();
-    writeDb(db);
+    await writeDb(db);
 
     res.json({ success: true, result, message: `Pengingat tugas "${task.title}" berhasil dikirim ke WhatsApp!` });
   } catch (err) {
@@ -272,7 +286,7 @@ app.post('/api/tasks/:id/notify', async (req, res) => {
   }
 });
 
-// 11. Get notification history
+// 12. Get notification history
 app.get('/api/notifications/history', (req, res) => {
   const db = readDb();
   res.json({ history: db.notificationHistory || [] });
