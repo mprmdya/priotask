@@ -70,9 +70,30 @@ function computeTaskPriority(task) {
 
 // ======================== API ROUTES ========================
 
-// 1. Health check
+// 1. Health check & Cron Trigger Endpoints (Bisa dipanggil oleh cron-job.org / UptimeRobot secara gratis)
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Endpoint untuk dipanggil berkala (misal tiap 10 menit) oleh free cron pinger:
+// Selain menjaga server Render tetap bangun 24/7, juga mengecek deadline tugas
+app.get('/api/cron/check', async (req, res) => {
+  try {
+    await checkDeadlines();
+    res.json({ success: true, message: 'Deadline check executed successfully', timestamp: new Date().toISOString() });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Endpoint untuk memicu Daily Digest (misal via cron-job.org tiap jam 07:30 WIB)
+app.get('/api/cron/digest', async (req, res) => {
+  try {
+    const result = await sendDailyDigest(true);
+    res.json({ success: true, result, message: 'Daily digest sent successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // 2. Get all tasks
