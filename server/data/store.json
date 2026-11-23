@@ -1,0 +1,72 @@
+{
+  "tasks": [
+    {
+      "id": "task-1",
+      "title": "Selesaikan Laporan Proyek Akhir",
+      "description": "Menyusun bab 4 & bab 5 serta lampiran data analitik untuk diserahkan ke dosen/klien.",
+      "category": "Akademik / Kerja",
+      "urgency": 5,
+      "importance": 5,
+      "status": "in_progress",
+      "dueDate": "2026-11-24T06:37:00.322Z",
+      "waReminderEnabled": true,
+      "lastNotifiedAt": null,
+      "createdAt": "2026-11-23T12:37:00.324Z",
+      "updatedAt": "2026-11-23T12:37:00.324Z"
+    },
+    {
+      "id": "task-2",
+      "title": "Riset Arsitektur Sistem Baru & Belajar Cloud Deployment",
+      "description": "Eksplorasi strategi deployment microservices dan CI/CD pipeline.",
+      "category": "Pengembangan Diri",
+      "urgency": 2,
+      "importance": 5,
+      "status": "todo",
+      "dueDate": "2026-11-28T12:37:00.324Z",
+      "waReminderEnabled": true,
+      "lastNotifiedAt": null,
+      "createdAt": "2026-11-23T12:37:00.324Z",
+      "updatedAt": "2026-11-23T12:37:00.324Z"
+    },
+    {
+      "id": "task-3",
+      "title": "Balas Email & Konfirmasi Kehadiran Rapat Non-Urgent",
+      "description": "Menjawab pesan dari partner yang meminta update jadwal minggu depan.",
+      "category": "Administrasi",
+      "urgency": 4,
+      "importance": 2,
+      "status": "todo",
+      "dueDate": "2026-11-24T12:37:00.324Z",
+      "waReminderEnabled": false,
+      "lastNotifiedAt": null,
+      "createdAt": "2026-11-23T12:37:00.324Z",
+      "updatedAt": "2026-11-23T12:37:00.324Z"
+    },
+    {
+      "id": "task-4",
+      "title": "Scroll Media Sosial & Browsing Tanpa Arah",
+      "description": "Aktivitas distraksi yang sering membuang waktu produktif kerja.",
+      "category": "Distraksi",
+      "urgency": 1,
+      "importance": 1,
+      "status": "todo",
+      "dueDate": null,
+      "waReminderEnabled": false,
+      "lastNotifiedAt": null,
+      "createdAt": "2026-11-23T12:37:00.324Z",
+      "updatedAt": "2026-11-23T12:37:00.324Z"
+    }
+  ],
+  "settings": {
+    "whatsapp": {
+      "provider": "callmebot",
+      "phoneNumber": "",
+      "apiKey": "",
+      "enabled": false,
+      "dailyDigestEnabled": true,
+      "dailyDigestTime": "07:30",
+      "deadlineReminderHoursBefore": 3
+    },
+    "notificationHistory": []
+  }
+}
